@@ -63,7 +63,7 @@ func (app *Application) Run() {
 			if exists {
 				monitorResources = append(monitorResources, resource)
 			} else {
-				app.Logger.Fatalf("Resource %s not found", rName)
+				app.Logger.Fatalf("Resource '%s' not found", rName)
 			}
 
 		}
@@ -75,7 +75,7 @@ func (app *Application) Run() {
 			if exists {
 				monitorChannels = append(monitorChannels, notificator)
 			} else {
-				app.Logger.Fatalf("Notificator %s not found", nName)
+				app.Logger.Fatalf("Notificator '%s' not found", nName)
 			}
 		}
 

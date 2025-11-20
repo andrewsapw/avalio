@@ -1,5 +1,10 @@
 package status
 
+import (
+	"fmt"
+	"strings"
+)
+
 type CheckError struct {
 	title       string
 	description string
@@ -8,6 +13,14 @@ type CheckError struct {
 type CheckResult struct {
 	ResourceName string
 	Errors       []CheckError
+}
+
+func (c CheckResult) ErorrsAsString() string {
+	var b strings.Builder
+	for _, e := range c.Errors {
+		b.WriteString(fmt.Sprintf("%s: %s\n", e.title, e.description))
+	}
+	return b.String()
 }
 
 func NewCheckError(title, description string) CheckError {
