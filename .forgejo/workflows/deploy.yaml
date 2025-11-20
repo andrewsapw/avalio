@@ -1,0 +1,65 @@
+on: [push]
+jobs:
+  print-content:
+    runs-on: k3s
+    container: ghcr.io/catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout code
+        run: |
+          git clone https://${{ github.token }}@${GITHUB_SERVER_URL#*//}/${{ github.repository }}.git .
+          git checkout ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: |
+          echo "Installing kubectl..."
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
+          sudo install -o root -g root -m 0755 ./kubectl /usr/local/bin/kubectl
+
+          echo "Installing helm..."
+          curl -LO https://get.helm.sh/helm-v3.19.0-linux-arm64.tar.gz
+          tar -zxvf helm-v3.19.0-linux-arm64.tar.gz
+          mv linux-arm64/helm /usr/local/bin/helm
+          helm version
+
+          echo "Installing envsubst..."
+          apt-get update && apt-get install -y gettext
+
+      - name: Create kubeconfig file
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > ${{ github.workspace }}/kubeconfig
+          mkdir ~/.kube && mv ${{ github.workspace }}/kubeconfig ~/.kube/config
+
+      - name: Add variables
+        id: add-vars
+        run: |
+          echo "::set-output name=registry::${GITHUB_SERVER_URL#*//}"  # built-in env variable
+          echo "::set-output name=repository::${GITHUB_REPOSITORY}"    # built-in env variable
+          echo "::set-output name=app::avalio"
+          echo "::set-output name=image::${GITHUB_SERVER_URL#*//}/${GITHUB_REPOSITORY}:${{ github.sha }}"
+          echo "::set-output name=context::avalio" 
+
+      - name: Login to Container Registry
+        run: |
+          echo  ${{ secrets.REPO_TOKEN }} | docker login  ${{ github.server_url }} -u ${{ secrets.REPO_WRITE_USERNAME }} --password-stdin
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{steps.add-vars.outputs.registry }}/${{steps.add-vars.outputs.repository }}:${{ github.sha }} .
+          docker push ${{steps.add-vars.outputs.registry }}/${{steps.add-vars.outputs.repository }}:${{ github.sha }}
+      
+      - name: Create config.toml file
+        run: |
+          echo "Creating ./devops/avalio/config.toml"
+          echo -n "${{ secrets.CONFIG_TOML }}" | base64 -d > ./devops/avalio/config.toml
+
+      - name: Deploy to Kubernetes using Helm
+        run: |
+          cd devops/avalio
+          helm upgrade --install \
+          --set image.repository=${GITHUB_SERVER_URL#*//}/${GITHUB_REPOSITORY} \
+          --set image.tag=${{ github.sha }} \
+          --set config="$(cat ./config.toml)" \
+          --namespace ${{steps.add-vars.outputs.app }} \
+          --create-namespace \
+          ${{steps.add-vars.outputs.app }} .
