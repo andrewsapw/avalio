@@ -90,7 +90,7 @@ func (app *Application) Run() {
 
 func (app Application) listenNotificator(notificator notificators.Notificator, channel <-chan status.CheckResult) {
 	for {
-		checkErrors := <-channel
-		notificator.Send(checkErrors)
+		checkResult := <-channel
+		notificator.Send(checkResult)
 	}
 }

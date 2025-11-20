@@ -5,28 +5,41 @@ import (
 	"strings"
 )
 
-type CheckError struct {
+type CheckDetails struct {
 	title       string
 	description string
 }
 
+type ResourceState int
+
+const (
+	StateAvailable    ResourceState = iota // 0
+	StateNotAvailable                      // 1
+	StateRecovered                         // 2
+)
+
 type CheckResult struct {
 	ResourceName string
-	Errors       []CheckError
+	State        ResourceState
+	Details      []CheckDetails
 }
 
 func (c CheckResult) ErorrsAsString() string {
 	var b strings.Builder
-	for _, e := range c.Errors {
+	for _, e := range c.Details {
 		b.WriteString(fmt.Sprintf("%s: %s\n", e.title, e.description))
 	}
 	return b.String()
 }
 
-func NewCheckError(title, description string) CheckError {
-	return CheckError{title: title, description: description}
+func NewCheckError(title, description string) CheckDetails {
+	return CheckDetails{title: title, description: description}
 }
 
-func NewCheckResult(resourceName string, errors []CheckError) CheckResult {
-	return CheckResult{ResourceName: resourceName, Errors: errors}
+func NewCheckResult(resourceName string, details []CheckDetails, state ResourceState) CheckResult {
+	return CheckResult{
+		ResourceName: resourceName,
+		Details:      details,
+		State:        state,
+	}
 }

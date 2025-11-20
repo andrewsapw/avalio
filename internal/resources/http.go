@@ -23,7 +23,7 @@ func (H HTTPResource) GetType() string {
 	return "http"
 }
 
-func (H HTTPResource) CheckErrors() []status.CheckError {
+func (H HTTPResource) RunCheck() (bool, []status.CheckDetails) {
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
@@ -31,24 +31,24 @@ func (H HTTPResource) CheckErrors() []status.CheckError {
 	// Use HEAD to avoid downloading the entire body
 	resp, err := client.Head(H.config.Url)
 	if err != nil {
-		var checkErrors [2]status.CheckError
+		var checkErrors [2]status.CheckDetails
 		checkErrors[0] = status.NewCheckError("Причина", "Ошибка соединения")
 		checkErrors[1] = status.NewCheckError("Ошибка", err.Error())
-		return checkErrors[:]
+		return false, checkErrors[:]
 	}
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode
 	if statusCode != H.config.ExpectedStatus {
-		var checkErrors [3]status.CheckError
+		var checkErrors [3]status.CheckDetails
 		checkErrors[0] = status.NewCheckError("Причина", "Неожиданный статус ответа")
 		checkErrors[1] = status.NewCheckError("Статус ответа", strconv.Itoa(resp.StatusCode))
 		checkErrors[2] = status.NewCheckError("Ожидаемый статус ответа", strconv.Itoa(H.config.ExpectedStatus))
-		return checkErrors[:]
+		return false, checkErrors[:]
 	}
 
 	// Consider 2xx and 3xx responses as "available"
-	return nil
+	return true, nil
 }
 
 func NewHTTPResource(config HttpResourceConfig, logger *log.Logger) Resource {

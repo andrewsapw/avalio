@@ -23,12 +23,23 @@ type TelegramResponse struct {
 
 // Send implements Notificator.
 func (t TelegraNotificator) Send(checkResult status.CheckResult) {
-	isSuccess := len(checkResult.Errors) == 0
+	isSuccess := len(checkResult.Details) == 0
 	if isSuccess {
 		return
 	}
 
-	message := fmt.Sprintf("❌ Ресурс `%s` недоступен.\n\n%s", checkResult.ResourceName, checkResult.ErorrsAsString())
+	var message string
+	if checkResult.State == status.StateNotAvailable {
+		message = fmt.Sprintf("❌ Ресурс `%s` недоступен.\n\n%s", checkResult.ResourceName, checkResult.ErorrsAsString())
+	} else if checkResult.State == status.StateRecovered {
+		message = fmt.Sprintf("✅ Ресурс `%s` снова доступен.", checkResult.ResourceName)
+	} else {
+		message = fmt.Sprintf(
+			"Ошибка проверки состояния ресурса '%s'. Код состояния '%d' не поддерживается",
+			checkResult.ResourceName,
+			checkResult.State,
+		)
+	}
 
 	t.sendMessage(message)
 }

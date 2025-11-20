@@ -26,11 +26,11 @@ func runResourceChecks(resource resources.Resource,
 		resourceName := resource.GetName()
 		logger.Printf("Checking resource %s", resourceName)
 
-		errors := resource.CheckErrors()
-		if len(errors) > 0 {
+		ok, details := resource.RunCheck()
+		if !ok {
 			errorsCounter += 1
 			if errorsCounter >= maxRetries {
-				checkResult := status.NewCheckResult(resourceName, errors)
+				checkResult := status.NewCheckResult(resourceName, details, status.StateNotAvailable)
 				for _, c := range channels {
 					c <- checkResult
 				}
@@ -44,8 +44,16 @@ func runResourceChecks(resource resources.Resource,
 			}
 
 		} else {
-			errorsCounter = 0
 			logger.Printf("Resource %s is available", resource.GetName())
+			details := []status.CheckDetails{}
+
+			if errorsCounter >= maxRetries {
+				for _, c := range channels {
+					c <- status.NewCheckResult(resourceName, details, status.StateRecovered)
+				}
+			}
+
+			errorsCounter = 0
 		}
 	}
 }
