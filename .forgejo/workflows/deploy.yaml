@@ -59,7 +59,7 @@ jobs:
           helm upgrade --install \
           --set image.repository=${GITHUB_SERVER_URL#*//}/${GITHUB_REPOSITORY} \
           --set image.tag=${{ github.sha }} \
-          --set config="$(cat ./config.toml)" \
+          --set-file config=./config.toml \
           --namespace ${{steps.add-vars.outputs.app }} \
           --create-namespace \
           ${{steps.add-vars.outputs.app }} .
