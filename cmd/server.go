@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 
 	"github.com/BurntSushi/toml"
 	"github.com/andrewsapw/avalio/internal/app"
@@ -59,14 +60,28 @@ func buildResources(config *app.Config, logger *log.Logger) ([]resources.Resourc
 
 func buildNotificators(config *app.Config, logger *log.Logger) []notificators.Notificator {
 	var buildedNotificators []notificators.Notificator
+	notificatorsNames := []string{}
+
 	for _, consoleNotificatorConfig := range config.Notificators.Console {
 		consoleNotificator := notificators.NewConsoleNotificator(consoleNotificatorConfig, logger)
+		if slices.Contains(notificatorsNames, consoleNotificator.GetName()) {
+			logger.Fatalf("Duplicated notificators names: %s", consoleNotificator.GetName())
+		}
+
 		logger.Printf("Builded notificator %s", consoleNotificator.GetName())
 		buildedNotificators = append(buildedNotificators, consoleNotificator)
+
+		notificatorsNames = append(notificatorsNames, consoleNotificator.GetName())
 	}
 
 	for _, telegramNotificatorConfig := range config.Notificators.Telegram {
+		if err := telegramNotificatorConfig.Validate(); err != nil {
+			logger.Fatal(err.Error())
+		}
 		telegramNotificator := notificators.NewTelegramNotificator(telegramNotificatorConfig, logger)
+		if slices.Contains(notificatorsNames, telegramNotificator.GetName()) {
+			logger.Fatalf("Duplicated notificators names: %s", telegramNotificator.GetName())
+		}
 		logger.Printf("Builded notificator %s", telegramNotificator.GetName())
 		buildedNotificators = append(buildedNotificators, telegramNotificator)
 	}
