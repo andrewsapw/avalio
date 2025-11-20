@@ -13,6 +13,11 @@ type CronMonitor struct {
 	logger *log.Logger
 }
 
+// GetRetries implements Monitor.
+func (c CronMonitor) GetRetries() int {
+	return c.config.Retries
+}
+
 // GetNotificatorsNames implements Monitor.
 func (c CronMonitor) GetNotificatorsNames() []string {
 	return c.config.Notificators
@@ -28,27 +33,17 @@ func NewCronMonitor(config CronMonitorConfig, logger *log.Logger) Monitor {
 }
 
 // Run implements Monitor.
-func (c CronMonitor) Run(resources []resources.Resource, notificationChannels []chan status.CheckResult) {
+func (c CronMonitor) Run(
+	resources []resources.Resource, notificationChannels []chan status.CheckResult) {
 	scheduler := cron.New()
+
 	for _, resource := range resources {
-		scheduler.AddFunc(c.config.Cron, func() { c.runResourceChecks(resource, notificationChannels) })
-		go c.runResourceChecks(resource, notificationChannels)
+		checkFunc := runResourceChecks(resource, notificationChannels, c.GetRetries(), c.logger)
+		// checkFunc()
+
+		scheduler.AddFunc(c.config.Cron, checkFunc)
 	}
 
 	c.logger.Printf("Starting CRON scheduler")
 	scheduler.Start()
-}
-
-func (c CronMonitor) runResourceChecks(resource resources.Resource, notificationChannels []chan status.CheckResult) {
-	resourceName := resource.GetName()
-	c.logger.Printf("Checking resource %s", resourceName)
-	errors := resource.CheckErrors()
-	if errors != nil || len(errors) > 0 {
-		checkResult := status.NewCheckResult(resourceName, errors)
-		for _, c := range notificationChannels {
-			c <- checkResult
-		}
-	} else {
-		c.logger.Printf("Resource %s is available", resource.GetName())
-	}
 }
