@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,7 +11,7 @@ import (
 
 type HTTPResource struct {
 	config HttpResourceConfig
-	logger *log.Logger
+	logger *slog.Logger
 }
 
 // GetName implements Resource.
@@ -51,6 +51,6 @@ func (H HTTPResource) RunCheck() (bool, []status.CheckDetails) {
 	return true, nil
 }
 
-func NewHTTPResource(config HttpResourceConfig, logger *log.Logger) Resource {
+func NewHTTPResource(config HttpResourceConfig, logger *slog.Logger) Resource {
 	return HTTPResource{config: config, logger: logger}
 }

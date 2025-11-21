@@ -1,7 +1,7 @@
 package monitors
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/andrewsapw/avalio/internal/resources"
 	"github.com/andrewsapw/avalio/internal/status"
@@ -19,12 +19,12 @@ type ResourceCheksFunction func()
 func runResourceChecks(resource resources.Resource,
 	channels []chan status.CheckResult,
 	maxRetries int,
-	logger *log.Logger,
+	logger *slog.Logger,
 ) ResourceCheksFunction {
 	errorsCounter := 0
 	return func() {
 		resourceName := resource.GetName()
-		logger.Printf("Checking resource %s", resourceName)
+		logger.Info("Checking resource", slog.String("resourceName", resourceName))
 
 		ok, details := resource.RunCheck()
 		if !ok {
@@ -35,16 +35,16 @@ func runResourceChecks(resource resources.Resource,
 					c <- checkResult
 				}
 			} else {
-				logger.Printf(
-					"Resource %s is unavailable for %d time in a row (max retries %d)",
-					resource.GetName(),
-					errorsCounter,
-					maxRetries,
+				logger.Warn(
+					"Resource is unavailable",
+					"resource_name", resource.GetName(),
+					"current_errors_counter", errorsCounter,
+					"max_retries", maxRetries,
 				)
 			}
 
 		} else {
-			logger.Printf("Resource %s is available", resource.GetName())
+			logger.Info("Resource is available", "resource_name", resource.GetName())
 			details := []status.CheckDetails{}
 
 			if errorsCounter >= maxRetries {

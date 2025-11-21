@@ -1,7 +1,8 @@
 package app
 
 import (
-	"log"
+	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/andrewsapw/avalio/internal/monitors"
@@ -14,14 +15,14 @@ type Application struct {
 	Resources    []resources.Resource
 	Notificators []notificators.Notificator
 	Monitors     []monitors.Monitor
-	Logger       *log.Logger
+	Logger       *slog.Logger
 }
 
 func NewApplication(
 	resources []resources.Resource,
 	notificators []notificators.Notificator,
 	monitors []monitors.Monitor,
-	logger *log.Logger,
+	logger *slog.Logger,
 ) *Application {
 	return &Application{
 		Resources:    resources,
@@ -50,7 +51,7 @@ func (app *Application) Run() {
 	// start notificators listen
 	for _, notificator := range app.Notificators {
 		channel, _ := notificatorsChannels[notificator.GetName()]
-		app.Logger.Printf("Starting notificator '%s'", notificator.GetName())
+		app.Logger.Info("Starting notificator", "notificator_name", notificator.GetName())
 		go app.listenNotificator(notificator, channel)
 	}
 
@@ -63,7 +64,8 @@ func (app *Application) Run() {
 			if exists {
 				monitorResources = append(monitorResources, resource)
 			} else {
-				app.Logger.Fatalf("Resource '%s' not found", rName)
+				app.Logger.Error("Resource not found", "resource_name", rName)
+				os.Exit(1)
 			}
 
 		}
@@ -75,14 +77,15 @@ func (app *Application) Run() {
 			if exists {
 				monitorChannels = append(monitorChannels, notificator)
 			} else {
-				app.Logger.Fatalf("Notificator '%s' not found", nName)
+				app.Logger.Error("Notificator not found", "notificator_name", nName)
+				os.Exit(1)
 			}
 		}
 
 		m.Run(monitorResources, monitorChannels)
 	}
 
-	app.Logger.Println("Application started")
+	app.Logger.Info("Application started")
 
 	wg.Add(1)
 	wg.Wait()

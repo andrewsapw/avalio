@@ -1,7 +1,7 @@
 package monitors
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/andrewsapw/avalio/internal/resources"
 	"github.com/andrewsapw/avalio/internal/status"
@@ -10,7 +10,7 @@ import (
 
 type CronMonitor struct {
 	config CronMonitorConfig
-	logger *log.Logger
+	logger *slog.Logger
 }
 
 // GetRetries implements Monitor.
@@ -28,7 +28,7 @@ func (c CronMonitor) GetResourcesNames() []string {
 	return c.config.Resources
 }
 
-func NewCronMonitor(config CronMonitorConfig, logger *log.Logger) Monitor {
+func NewCronMonitor(config CronMonitorConfig, logger *slog.Logger) Monitor {
 	return CronMonitor{config: config, logger: logger}
 }
 
@@ -44,6 +44,6 @@ func (c CronMonitor) Run(
 		scheduler.AddFunc(c.config.Cron, checkFunc)
 	}
 
-	c.logger.Printf("Starting CRON scheduler")
+	c.logger.Info("Starting cron scheduler")
 	scheduler.Start()
 }

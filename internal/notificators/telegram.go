@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/andrewsapw/avalio/internal/status"
@@ -12,7 +12,7 @@ import (
 
 type TelegraNotificator struct {
 	config TelegramNotificatorConfig
-	logger *log.Logger
+	logger *slog.Logger
 }
 
 // TelegramResponse represents the structure of Telegram API response
@@ -84,6 +84,6 @@ func (t TelegraNotificator) GetName() string {
 	return t.config.Name
 }
 
-func NewTelegramNotificator(config TelegramNotificatorConfig, logger *log.Logger) Notificator {
+func NewTelegramNotificator(config TelegramNotificatorConfig, logger *slog.Logger) Notificator {
 	return TelegraNotificator{config: config, logger: logger}
 }

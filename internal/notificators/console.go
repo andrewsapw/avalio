@@ -1,14 +1,14 @@
 package notificators
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/andrewsapw/avalio/internal/status"
 )
 
 type ConsoleNotificator struct {
 	config ConsoleNotificatorConfig
-	logger *log.Logger
+	logger *slog.Logger
 }
 
 // GetName implements Notificator.
@@ -18,9 +18,9 @@ func (c ConsoleNotificator) GetName() string {
 
 // Send implements Notificator.
 func (c ConsoleNotificator) Send(checkResult status.CheckResult) {
-	c.logger.Printf("got check result for resource '%s': %s", checkResult.ResourceName, checkResult.Details)
+	c.logger.Info("got check result for resource '%s': %s", checkResult.ResourceName, checkResult.Details)
 }
 
-func NewConsoleNotificator(config ConsoleNotificatorConfig, logger *log.Logger) Notificator {
+func NewConsoleNotificator(config ConsoleNotificatorConfig, logger *slog.Logger) Notificator {
 	return ConsoleNotificator{config: config, logger: logger}
 }
