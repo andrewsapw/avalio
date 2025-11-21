@@ -28,7 +28,7 @@ func (c CronMonitor) GetResourcesNames() []string {
 	return c.config.Resources
 }
 
-func NewCronMonitor(config CronMonitorConfig, logger *slog.Logger) Monitor {
+func NewCronMonitor(config CronMonitorConfig, logger *slog.Logger) CronMonitor {
 	return CronMonitor{config: config, logger: logger}
 }
 

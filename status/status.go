@@ -1,10 +1,45 @@
 package status
 
-type Status struct {
-	Success      bool
-	ResourceName string
+import (
+	"fmt"
+	"strings"
+)
+
+type CheckDetails struct {
+	title       string
+	description string
 }
 
-func NewStatus(success bool, resourceName string) Status {
-	return Status{success, resourceName}
+type ResourceState int
+
+const (
+	StateAvailable    ResourceState = iota // 0
+	StateNotAvailable                      // 1
+	StateRecovered                         // 2
+)
+
+type CheckResult struct {
+	ResourceName string
+	State        ResourceState
+	Details      []CheckDetails
+}
+
+func (c CheckResult) ErorrsAsString() string {
+	var b strings.Builder
+	for _, e := range c.Details {
+		b.WriteString(fmt.Sprintf("%s: %s\n", e.title, e.description))
+	}
+	return b.String()
+}
+
+func NewCheckError(title, description string) CheckDetails {
+	return CheckDetails{title: title, description: description}
+}
+
+func NewCheckResult(resourceName string, details []CheckDetails, state ResourceState) CheckResult {
+	return CheckResult{
+		ResourceName: resourceName,
+		Details:      details,
+		State:        state,
+	}
 }

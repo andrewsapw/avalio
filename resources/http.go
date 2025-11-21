@@ -50,6 +50,6 @@ func (H HTTPResource) RunCheck() (bool, []status.CheckDetails) {
 	return true, nil
 }
 
-func NewHTTPResource(config HttpResourceConfig, logger *slog.Logger) Resource {
+func NewHTTPResource(config HttpResourceConfig, logger *slog.Logger) HTTPResource {
 	return HTTPResource{config: config, logger: logger}
 }

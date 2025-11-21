@@ -10,7 +10,7 @@ import (
 	"github.com/andrewsapw/avalio/status"
 )
 
-type TelegraNotificator struct {
+type TelegramNotificator struct {
 	config TelegramNotificatorConfig
 	logger *slog.Logger
 }
@@ -22,18 +22,19 @@ type TelegramResponse struct {
 }
 
 // Send implements Notificator.
-func (t TelegraNotificator) Send(checkResult status.CheckResult) {
+func (t TelegramNotificator) Send(checkResult status.CheckResult) {
 	isSuccess := len(checkResult.Details) == 0
 	if isSuccess {
 		return
 	}
 
 	var message string
-	if checkResult.State == status.StateNotAvailable {
+	switch checkResult.State {
+	case status.StateNotAvailable:
 		message = fmt.Sprintf("❌ Ресурс `%s` недоступен.\n\n%s", checkResult.ResourceName, checkResult.ErorrsAsString())
-	} else if checkResult.State == status.StateRecovered {
+	case status.StateRecovered:
 		message = fmt.Sprintf("✅ Ресурс `%s` снова доступен.", checkResult.ResourceName)
-	} else {
+	default:
 		message = fmt.Sprintf(
 			"Ошибка проверки состояния ресурса '%s'. Код состояния '%d' не поддерживается",
 			checkResult.ResourceName,
@@ -44,12 +45,12 @@ func (t TelegraNotificator) Send(checkResult status.CheckResult) {
 	t.sendMessage(message)
 }
 
-func (t TelegraNotificator) sendMessage(message string) error {
+func (t TelegramNotificator) sendMessage(message string) error {
 	// Create the request URL
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", t.config.Token)
 
 	// Create the request body
-	requestBody, err := json.Marshal(map[string]interface{}{
+	requestBody, err := json.Marshal(map[string]any{
 		"chat_id":    t.config.ChatID,
 		"text":       message,
 		"parse_mode": "Markdown",
@@ -80,10 +81,10 @@ func (t TelegraNotificator) sendMessage(message string) error {
 }
 
 // GetName implements Notificator.
-func (t TelegraNotificator) GetName() string {
+func (t TelegramNotificator) GetName() string {
 	return t.config.Name
 }
 
-func NewTelegramNotificator(config TelegramNotificatorConfig, logger *slog.Logger) Notificator {
-	return TelegraNotificator{config: config, logger: logger}
+func NewTelegramNotificator(config TelegramNotificatorConfig, logger *slog.Logger) TelegramNotificator {
+	return TelegramNotificator{config: config, logger: logger}
 }
