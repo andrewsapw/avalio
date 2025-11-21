@@ -1,7 +1,7 @@
 package notificators
 
 import (
-	"github.com/andrewsapw/avalio/internal/status"
+	"github.com/andrewsapw/avalio/status"
 )
 
 type Notificator interface {

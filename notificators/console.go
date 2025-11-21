@@ -3,7 +3,7 @@ package notificators
 import (
 	"log/slog"
 
-	"github.com/andrewsapw/avalio/internal/status"
+	"github.com/andrewsapw/avalio/status"
 )
 
 type ConsoleNotificator struct {

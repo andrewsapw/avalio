@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/andrewsapw/avalio/internal/status"
+	"github.com/andrewsapw/avalio/status"
 )
 
 type HTTPResource struct {

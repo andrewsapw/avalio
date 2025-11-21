@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/andrewsapw/avalio/internal/status"
+	"github.com/andrewsapw/avalio/status"
 )
 
 type TelegraNotificator struct {

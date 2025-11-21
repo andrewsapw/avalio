@@ -1,6 +1,6 @@
 package resources
 
-import "github.com/andrewsapw/avalio/internal/status"
+import "github.com/andrewsapw/avalio/status"
 
 type Resource interface {
 	GetName() string

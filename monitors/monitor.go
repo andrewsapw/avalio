@@ -3,8 +3,8 @@ package monitors
 import (
 	"log/slog"
 
-	"github.com/andrewsapw/avalio/internal/resources"
-	"github.com/andrewsapw/avalio/internal/status"
+	"github.com/andrewsapw/avalio/resources"
+	"github.com/andrewsapw/avalio/status"
 )
 
 type Monitor interface {

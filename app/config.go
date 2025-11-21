@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/andrewsapw/avalio/internal/monitors"
-	"github.com/andrewsapw/avalio/internal/notificators"
-	"github.com/andrewsapw/avalio/internal/resources"
+	"github.com/andrewsapw/avalio/monitors"
+	"github.com/andrewsapw/avalio/notificators"
+	"github.com/andrewsapw/avalio/resources"
 )
 
 type Config struct {
