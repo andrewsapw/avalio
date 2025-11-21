@@ -47,7 +47,6 @@ func (H HTTPResource) RunCheck() (bool, []status.CheckDetails) {
 		return false, checkErrors[:]
 	}
 
-	// Consider 2xx and 3xx responses as "available"
 	return true, nil
 }
 
