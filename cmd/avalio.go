@@ -13,7 +13,7 @@ import (
 	"github.com/andrewsapw/avalio/internal/resources"
 )
 
-func StartServer() {
+func StartAvalio() {
 	configPath := flag.String("config", "", "config path")
 
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
