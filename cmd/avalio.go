@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"flag"
+	"log"
 	"log/slog"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/andrewsapw/avalio/app"
@@ -15,19 +17,30 @@ import (
 
 func StartAvalio() {
 	configPath := flag.String("config", "", "config path")
-
-	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
-	logger := slog.New(handler)
-
 	flag.Parse()
-
-	logger.Info("loading configuration file", "config_path", *configPath)
 
 	config, err := parseConfig(*configPath)
 	if err != nil {
-		logger.Error(err.Error())
+		log.Default().Fatal(err.Error())
 		os.Exit(1)
 	}
+
+	var logLevel slog.Level
+	switch strings.ToLower(config.LogLevel) {
+	case "info":
+		logLevel = slog.LevelInfo
+	case "debug":
+		logLevel = slog.LevelDebug
+	case "error":
+		logLevel = slog.LevelError
+	default:
+		logLevel = slog.LevelInfo
+	}
+
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})
+	logger := slog.New(handler)
+
+	logger.Info("Loading configuration file", "config_path", *configPath)
 
 	resources, _ := buildResources(config, logger)
 	notificators := buildNotificators(config, logger)

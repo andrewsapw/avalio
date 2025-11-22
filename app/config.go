@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	LogLevel     string                          `toml:"log_level"`
 	Resources    resources.ResourcesConfig       `toml:"resources"`
 	Notificators notificators.NotificatorsConfig `toml:"notificators"`
 	Monitors     monitors.MonitorsConfig         `toml:"monitors"`
