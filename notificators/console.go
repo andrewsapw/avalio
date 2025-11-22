@@ -18,7 +18,11 @@ func (c ConsoleNotificator) GetName() string {
 
 // Send implements Notificator.
 func (c ConsoleNotificator) Send(checkResult status.CheckResult) {
-	c.logger.Info("got check result for resource '%s': %s", checkResult.ResourceName, checkResult.Details)
+	c.logger.Debug(
+		"Got check result for resource",
+		"resource", checkResult.ResourceName,
+		"details", checkResult.Details,
+	)
 }
 
 func NewConsoleNotificator(config ConsoleNotificatorConfig, logger *slog.Logger) Notificator {
