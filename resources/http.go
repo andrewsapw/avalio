@@ -31,9 +31,8 @@ func (H HTTPResource) RunCheck() (bool, []status.CheckDetails) {
 	// Use HEAD to avoid downloading the entire body
 	resp, err := client.Head(H.config.Url)
 	if err != nil {
-		var checkErrors [2]status.CheckDetails
+		var checkErrors [1]status.CheckDetails
 		checkErrors[0] = status.NewCheckError("Причина", "Ошибка соединения")
-		checkErrors[1] = status.NewCheckError("Ошибка", err.Error())
 		return false, checkErrors[:]
 	}
 	defer resp.Body.Close()
