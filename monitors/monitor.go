@@ -22,14 +22,17 @@ func runResourceChecks(resource resources.Resource,
 	logger *slog.Logger,
 ) ResourceCheksFunction {
 	errorsCounter := 0
+	isLatestMessageError := false
+
 	return func() {
 		resourceName := resource.GetName()
-		logger.Info("Checking resource", slog.String("resourceName", resourceName))
+		logger.Debug("Checking resource", slog.String("resourceName", resourceName))
 
 		ok, details := resource.RunCheck()
 		if !ok {
 			errorsCounter += 1
-			if errorsCounter >= maxRetries {
+			if errorsCounter >= maxRetries && !isLatestMessageError {
+				isLatestMessageError = true
 				checkResult := status.NewCheckResult(resourceName, details, status.StateNotAvailable)
 				for _, c := range channels {
 					c <- checkResult
@@ -42,18 +45,18 @@ func runResourceChecks(resource resources.Resource,
 					"max_retries", maxRetries,
 				)
 			}
-
 		} else {
-			logger.Info("Resource is available", "resource_name", resource.GetName())
+			logger.Debug("Resource is available", "resource_name", resource.GetName())
 			details := []status.CheckDetails{}
 
-			if errorsCounter >= maxRetries {
+			if isLatestMessageError {
 				for _, c := range channels {
 					c <- status.NewCheckResult(resourceName, details, status.StateRecovered)
 				}
 			}
 
 			errorsCounter = 0
+			isLatestMessageError = false
 		}
 	}
 }
