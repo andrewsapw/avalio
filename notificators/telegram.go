@@ -34,6 +34,8 @@ func (t TelegramNotificator) Send(checkResult status.CheckResult) {
 		message = fmt.Sprintf("❌ Ресурс `%s` недоступен.\n\n%s", checkResult.ResourceName, checkResult.ErorrsAsString())
 	case status.StateRecovered:
 		message = fmt.Sprintf("✅ Ресурс `%s` снова доступен.", checkResult.ResourceName)
+	case status.StateAvailable:
+		return
 	default:
 		message = fmt.Sprintf(
 			"Ошибка проверки состояния ресурса '%s'. Код состояния '%d' не поддерживается",

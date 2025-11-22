@@ -53,6 +53,10 @@ func runResourceChecks(resource resources.Resource,
 				for _, c := range channels {
 					c <- status.NewCheckResult(resourceName, details, status.StateRecovered)
 				}
+			} else {
+				for _, c := range channels {
+					c <- status.NewCheckResult(resourceName, details, status.StateAvailable)
+				}
 			}
 
 			errorsCounter = 0
