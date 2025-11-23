@@ -82,7 +82,17 @@ func (app *Application) Run() {
 			}
 		}
 
-		m.Run(monitorResources, monitorChannels)
+		for _, r := range monitorResources {
+			runner := monitors.NewMonitorRunner(
+				m,
+				r,
+				monitorChannels,
+				app.Logger,
+			)
+
+			go runner.Run()
+		}
+
 	}
 
 	app.Logger.Info("Application started")

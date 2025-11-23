@@ -1,66 +1,14 @@
 package monitors
 
 import (
-	"log/slog"
-
-	"github.com/andrewsapw/avalio/resources"
-	"github.com/andrewsapw/avalio/status"
+	"time"
 )
 
 type Monitor interface {
-	Run(resources []resources.Resource, notificationChannels []chan status.CheckResult)
+	GetName() string
 	GetResourcesNames() []string
 	GetNotificatorsNames() []string
-	GetRetries() int
+	Next() time.Time
 }
 
 type ResourceCheksFunction func()
-
-func runResourceChecks(resource resources.Resource,
-	channels []chan status.CheckResult,
-	maxRetries int,
-	logger *slog.Logger,
-) ResourceCheksFunction {
-	errorsCounter := 0
-	isLatestMessageError := false
-
-	return func() {
-		resourceName := resource.GetName()
-		logger.Debug("Checking resource", slog.String("resourceName", resourceName))
-
-		ok, details := resource.RunCheck()
-		if !ok {
-			errorsCounter += 1
-			if errorsCounter >= maxRetries && !isLatestMessageError {
-				isLatestMessageError = true
-				checkResult := status.NewCheckResult(resourceName, details, status.StateNotAvailable)
-				for _, c := range channels {
-					c <- checkResult
-				}
-			} else {
-				logger.Warn(
-					"Resource is unavailable",
-					"resource_name", resource.GetName(),
-					"current_errors_counter", errorsCounter,
-					"max_retries", maxRetries,
-				)
-			}
-		} else {
-			logger.Debug("Resource is available", "resource_name", resource.GetName())
-			details := []status.CheckDetails{}
-
-			if isLatestMessageError {
-				for _, c := range channels {
-					c <- status.NewCheckResult(resourceName, details, status.StateRecovered)
-				}
-			} else {
-				for _, c := range channels {
-					c <- status.NewCheckResult(resourceName, details, status.StateAvailable)
-				}
-			}
-
-			errorsCounter = 0
-			isLatestMessageError = false
-		}
-	}
-}

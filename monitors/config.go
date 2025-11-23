@@ -7,7 +7,6 @@ package monitors
 // retries = 3
 
 type MonitorConfig struct {
-	Retries      int      `toml:"retries"`
 	Name         string   `toml:"name"`
 	Resources    []string `toml:"resources"`
 	Notificators []string `toml:"notificators"`

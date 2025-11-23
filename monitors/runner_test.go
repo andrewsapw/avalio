@@ -32,36 +32,39 @@ func (m MockedResource) RunCheck() (bool, []status.CheckDetails) {
 
 func checkAndVerifyState(
 	t *testing.T,
-	checkFunction ResourceCheksFunction,
-	channel chan status.CheckResult,
+	runner *MonitorRunner,
 	state status.ResourceState,
 ) {
-	go checkFunction()
-	details := <-channel
-	if details.State != state {
+	checkResult := runner.Step()
+	if checkResult.State != state {
 		t.Errorf("Expected state to be %d", state)
 	}
 }
+
 func TestMonitorStates(t *testing.T) {
 	channel := make(chan status.CheckResult)
 	channels := [1]chan status.CheckResult{channel}
 
-	logger := slog.Default()
+	cronConfig := CronMonitorConfig{
+		Cron: "* * * *",
+	}
 
 	toFail := false
 	resource := MockedResource{toFail: &toFail}
+	logger := slog.Default()
+	monitor, _ := NewCronMonitor(cronConfig, logger)
 
-	checkFunction := runResourceChecks(
+	runner := NewMonitorRunner(
+		monitor,
 		resource,
 		channels[:],
-		1,
 		logger,
 	)
 
-	checkAndVerifyState(t, checkFunction, channel, status.StateAvailable)
+	checkAndVerifyState(t, runner, status.StateAvailable)
 	toFail = true
-	checkAndVerifyState(t, checkFunction, channel, status.StateNotAvailable)
+	checkAndVerifyState(t, runner, status.StateNotAvailable)
 	toFail = false
-	checkAndVerifyState(t, checkFunction, channel, status.StateRecovered)
-	checkAndVerifyState(t, checkFunction, channel, status.StateAvailable)
+	checkAndVerifyState(t, runner, status.StateRecovered)
+	checkAndVerifyState(t, runner, status.StateAvailable)
 }

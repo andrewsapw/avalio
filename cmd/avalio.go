@@ -109,7 +109,11 @@ func buildNotificators(config *app.Config, logger *slog.Logger) []notificators.N
 func buildMonitors(config *app.Config, logger *slog.Logger) []monitors.Monitor {
 	var buildedMonitors []monitors.Monitor
 	for _, cronMonitorConfig := range config.Monitors.Cron {
-		cronMonitor := monitors.NewCronMonitor(cronMonitorConfig, logger)
+		cronMonitor, err := monitors.NewCronMonitor(cronMonitorConfig, logger)
+		if err != nil {
+			log.Fatalf("%s", err.Error())
+		}
+
 		logger.Info("Builded monitor", "monitor_name", cronMonitorConfig.Name)
 		buildedMonitors = append(buildedMonitors, cronMonitor)
 	}

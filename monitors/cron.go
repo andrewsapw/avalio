@@ -2,20 +2,20 @@ package monitors
 
 import (
 	"log/slog"
+	"time"
 
-	"github.com/andrewsapw/avalio/resources"
-	"github.com/andrewsapw/avalio/status"
 	"github.com/robfig/cron/v3"
 )
 
 type CronMonitor struct {
-	config CronMonitorConfig
-	logger *slog.Logger
+	config   CronMonitorConfig
+	logger   *slog.Logger
+	schedule cron.Schedule
 }
 
-// GetRetries implements Monitor.
-func (c CronMonitor) GetRetries() int {
-	return c.config.Retries
+// GetName implements Monitor.
+func (c *CronMonitor) GetName() string {
+	return c.config.Name
 }
 
 // GetNotificatorsNames implements Monitor.
@@ -28,22 +28,17 @@ func (c CronMonitor) GetResourcesNames() []string {
 	return c.config.Resources
 }
 
-func NewCronMonitor(config CronMonitorConfig, logger *slog.Logger) CronMonitor {
-	return CronMonitor{config: config, logger: logger}
+func (c CronMonitor) Next() time.Time {
+	now := time.Now()
+	return c.schedule.Next(now)
 }
 
-// Run implements Monitor.
-func (c CronMonitor) Run(
-	resources []resources.Resource, notificationChannels []chan status.CheckResult) {
-	scheduler := cron.New()
-
-	for _, resource := range resources {
-		checkFunc := runResourceChecks(resource, notificationChannels, c.GetRetries(), c.logger)
-		// checkFunc()
-
-		scheduler.AddFunc(c.config.Cron, checkFunc)
+func NewCronMonitor(config CronMonitorConfig, logger *slog.Logger) (*CronMonitor, error) {
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
+	schedule, err := parser.Parse(config.Cron)
+	if err != nil {
+		return nil, err
 	}
+	return &CronMonitor{config: config, logger: logger, schedule: schedule}, nil
 
-	c.logger.Info("Starting cron scheduler")
-	scheduler.Start()
 }
