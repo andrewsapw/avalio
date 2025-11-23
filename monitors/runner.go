@@ -52,7 +52,7 @@ func (m *MonitorRunner) Step() status.CheckResult {
 			checkResult := status.NewCheckResult(resourceName, details, status.StateNotAvailable)
 			return checkResult
 		} else {
-			checkResult := status.NewCheckResult(resourceName, details, status.StateNotAvailable)
+			checkResult := status.NewCheckResult(resourceName, details, status.StateStillNotAvailable)
 			return checkResult
 		}
 	} else {

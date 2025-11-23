@@ -64,6 +64,7 @@ func TestMonitorStates(t *testing.T) {
 	checkAndVerifyState(t, runner, status.StateAvailable)
 	toFail = true
 	checkAndVerifyState(t, runner, status.StateNotAvailable)
+	checkAndVerifyState(t, runner, status.StateStillNotAvailable)
 	toFail = false
 	checkAndVerifyState(t, runner, status.StateRecovered)
 	checkAndVerifyState(t, runner, status.StateAvailable)

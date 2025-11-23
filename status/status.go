@@ -13,9 +13,10 @@ type CheckDetails struct {
 type ResourceState int
 
 const (
-	StateAvailable    ResourceState = iota // 0
-	StateNotAvailable                      // 1
-	StateRecovered                         // 2
+	StateAvailable         ResourceState = iota // 0
+	StateNotAvailable                           // 1
+	StateStillNotAvailable                      // 2
+	StateRecovered                              // 3
 )
 
 type CheckResult struct {
