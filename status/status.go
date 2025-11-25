@@ -19,6 +19,21 @@ const (
 	StateRecovered                              // 3
 )
 
+func (s ResourceState) String() string {
+	switch s {
+	case StateAvailable:
+		return "available"
+	case StateNotAvailable:
+		return "not available"
+	case StateStillNotAvailable:
+		return "still not available"
+	case StateRecovered:
+		return "recovered"
+	default:
+		return "unknown"
+	}
+}
+
 type CheckResult struct {
 	ResourceName string
 	State        ResourceState

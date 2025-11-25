@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/andrewsapw/avalio/monitors"
 	"github.com/andrewsapw/avalio/notificators"
@@ -50,9 +51,8 @@ func (app *Application) Run() {
 
 	// start notificators listen
 	for _, notificator := range app.Notificators {
-		channel, _ := notificatorsChannels[notificator.GetName()]
-		app.Logger.Info("Starting notificator", "notificator_name", notificator.GetName())
-		go app.listenNotificator(notificator, channel)
+		channel := notificatorsChannels[notificator.GetName()]
+		go app.listenNotificator(notificator, channel, app.Logger)
 	}
 
 	// start monitors
@@ -101,9 +101,11 @@ func (app *Application) Run() {
 	wg.Wait()
 }
 
-func (app Application) listenNotificator(notificator notificators.Notificator, channel <-chan status.CheckResult) {
+func (app Application) listenNotificator(notificator notificators.Notificator, channel <-chan status.CheckResult, logger *slog.Logger) {
+	logger.Info("Starting notificator", "notificator_name", notificator.GetName())
 	for {
 		checkResult := <-channel
 		notificator.Send(checkResult)
+		time.Sleep(time.Second * 1)
 	}
 }

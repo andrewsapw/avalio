@@ -17,7 +17,7 @@ type MonitorRunner struct {
 }
 
 func NewMonitorRunner(monitor Monitor, resource resources.Resource, channels []chan status.CheckResult, logger *slog.Logger) *MonitorRunner {
-	return &MonitorRunner{monitor: monitor, resource: resource, logger: logger, isLastMessageError: false}
+	return &MonitorRunner{monitor: monitor, channels: channels, resource: resource, logger: logger, isLastMessageError: false}
 }
 
 func (m *MonitorRunner) Run() {
@@ -37,7 +37,8 @@ func (m *MonitorRunner) Run() {
 		sleepTime := time.Until(nextStepAt)
 		m.logger.Debug("Check result sent to notificators",
 			"state", checkResult.State,
-			"next_run", nextStepAt)
+			"next_run", nextStepAt,
+			"resource_name", resourceName)
 		time.Sleep(sleepTime)
 	}
 }

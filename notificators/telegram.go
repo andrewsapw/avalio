@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/andrewsapw/avalio/status"
 )
@@ -23,10 +24,6 @@ type TelegramResponse struct {
 
 // Send implements Notificator.
 func (t TelegramNotificator) Send(checkResult status.CheckResult) {
-	isSuccess := len(checkResult.Details) == 0
-	if isSuccess {
-		return
-	}
 
 	var message string
 	switch checkResult.State {
@@ -52,6 +49,9 @@ func (t TelegramNotificator) Send(checkResult status.CheckResult) {
 func (t TelegramNotificator) sendMessage(message string) error {
 	// Create the request URL
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", t.config.Token)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
 
 	// Create the request body
 	requestBody, err := json.Marshal(map[string]any{
@@ -64,8 +64,9 @@ func (t TelegramNotificator) sendMessage(message string) error {
 	}
 
 	// Send POST request
-	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(requestBody))
+	resp, err := client.Post(apiURL, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
+		t.logger.Error("HTTP request failed", "error", err.Error())
 		return fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
@@ -73,11 +74,13 @@ func (t TelegramNotificator) sendMessage(message string) error {
 	// Parse the response
 	var telegramResp TelegramResponse
 	if err := json.NewDecoder(resp.Body).Decode(&telegramResp); err != nil {
+		t.logger.Error("failed to decode response", "error", err.Error())
 		return fmt.Errorf("failed to decode response: %v", err)
 	}
 
 	// Check if the message was sent successfully
 	if !telegramResp.OK {
+		t.logger.Error("telegram API error", "error", err.Error())
 		return fmt.Errorf("telegram API error: %s", telegramResp.Description)
 	}
 
