@@ -18,7 +18,7 @@ func StartAvalio() {
 	configPath := flag.String("config", "", "config path")
 	flag.Parse()
 
-	config, err := parseConfig(*configPath)
+	config, err := app.ParseConfig(*configPath)
 	if err != nil {
 		log.Default().Fatal(err.Error())
 		os.Exit(1)
@@ -60,15 +60,4 @@ func StartAvalio() {
 
 	application := app.NewApplication(resources, notificators, monitors, logger)
 	application.Run()
-}
-
-func parseConfig(configPath string) (*app.Config, error) {
-	var config app.Config
-
-	_, err := toml.DecodeFile(configPath, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &config, nil
 }
