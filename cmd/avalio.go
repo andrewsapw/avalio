@@ -5,7 +5,6 @@ import (
 	"log"
 	"log/slog"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -42,9 +41,22 @@ func StartAvalio() {
 
 	logger.Info("Loading configuration file", "config_path", *configPath)
 
-	resources, _ := buildResources(config, logger)
-	notificators := buildNotificators(config, logger)
-	monitors := buildMonitors(config, logger)
+	resources, err := resources.BuildResources(&config.Resources, logger)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	notificators, err := notificators.BuildNotificators(&config.Notificators, logger)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	monitors, err := monitors.BuildMonitors(&config.Monitors, logger)
+	if err != nil {
+		os.Exit(1)
+	}
 
 	application := app.NewApplication(resources, notificators, monitors, logger)
 	application.Run()
@@ -59,64 +71,4 @@ func parseConfig(configPath string) (*app.Config, error) {
 	}
 
 	return &config, nil
-}
-
-func buildResources(config *app.Config, logger *slog.Logger) ([]resources.Resource, error) {
-	var buildedResources []resources.Resource
-	for _, httpResourceConfig := range config.Resources.Http {
-		httpResource := resources.NewHTTPResource(httpResourceConfig, logger)
-		logger.Info("Builded resource", "resource_name", httpResource.GetName())
-		buildedResources = append(buildedResources, httpResource)
-	}
-
-	return buildedResources, nil
-}
-
-func buildNotificators(config *app.Config, logger *slog.Logger) []notificators.Notificator {
-	var buildedNotificators []notificators.Notificator
-	notificatorsNames := []string{}
-
-	for _, consoleNotificatorConfig := range config.Notificators.Console {
-		consoleNotificator := notificators.NewConsoleNotificator(consoleNotificatorConfig, logger)
-		if slices.Contains(notificatorsNames, consoleNotificator.GetName()) {
-			logger.Error("Duplicated notificators names", "duplicated_names", consoleNotificator.GetName())
-			os.Exit(1)
-		}
-
-		logger.Info("Builded notificator", "notificatorName", consoleNotificator.GetName())
-		buildedNotificators = append(buildedNotificators, consoleNotificator)
-
-		notificatorsNames = append(notificatorsNames, consoleNotificator.GetName())
-	}
-
-	for _, telegramNotificatorConfig := range config.Notificators.Telegram {
-		if err := telegramNotificatorConfig.Validate(); err != nil {
-			logger.Error(err.Error())
-			os.Exit(1)
-		}
-		telegramNotificator := notificators.NewTelegramNotificator(telegramNotificatorConfig, logger)
-		if slices.Contains(notificatorsNames, telegramNotificator.GetName()) {
-			logger.Error("Duplicated notificators names", "duplicated_names", telegramNotificator.GetName())
-			os.Exit(1)
-		}
-		logger.Info("Builded notificator", "notificator_name", telegramNotificator.GetName())
-		buildedNotificators = append(buildedNotificators, telegramNotificator)
-	}
-
-	return buildedNotificators
-}
-
-func buildMonitors(config *app.Config, logger *slog.Logger) []monitors.Monitor {
-	var buildedMonitors []monitors.Monitor
-	for _, cronMonitorConfig := range config.Monitors.Cron {
-		cronMonitor, err := monitors.NewCronMonitor(cronMonitorConfig, logger)
-		if err != nil {
-			log.Fatalf("%s", err.Error())
-		}
-
-		logger.Info("Builded monitor", "monitor_name", cronMonitorConfig.Name)
-		buildedMonitors = append(buildedMonitors, cronMonitor)
-	}
-
-	return buildedMonitors
 }
