@@ -1,6 +1,7 @@
 package monitors
 
 import (
+	"context"
 	"log/slog"
 	"testing"
 
@@ -58,6 +59,7 @@ func TestMonitorStates(t *testing.T) {
 		monitor,
 		resource,
 		channels[:],
+		context.Background(),
 		logger,
 	)
 

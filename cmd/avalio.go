@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/andrewsapw/avalio/app"
 	"github.com/andrewsapw/avalio/monitors"
 	"github.com/andrewsapw/avalio/notificators"

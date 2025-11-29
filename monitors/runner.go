@@ -1,6 +1,7 @@
 package monitors
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
@@ -14,10 +15,17 @@ type MonitorRunner struct {
 	isLastMessageError bool
 	channels           []chan status.CheckResult
 	logger             *slog.Logger
+	ctx                context.Context
 }
 
-func NewMonitorRunner(monitor Monitor, resource resources.Resource, channels []chan status.CheckResult, logger *slog.Logger) *MonitorRunner {
-	return &MonitorRunner{monitor: monitor, channels: channels, resource: resource, logger: logger, isLastMessageError: false}
+func NewMonitorRunner(
+	monitor Monitor,
+	resource resources.Resource,
+	channels []chan status.CheckResult,
+	ctx context.Context,
+	logger *slog.Logger,
+) *MonitorRunner {
+	return &MonitorRunner{monitor: monitor, channels: channels, resource: resource, ctx: ctx, logger: logger, isLastMessageError: false}
 }
 
 func (m *MonitorRunner) Run() {
@@ -29,6 +37,12 @@ func (m *MonitorRunner) Run() {
 		m.logger.Debug("Checking resource", slog.String("resourceName", resourceName))
 		checkResult := m.Step()
 
+		err := m.ctx.Err()
+		if err != nil {
+			// context is closed
+			return
+		}
+
 		for _, c := range m.channels {
 			c <- checkResult
 		}
@@ -39,6 +53,7 @@ func (m *MonitorRunner) Run() {
 			"state", checkResult.State,
 			"next_run", nextStepAt,
 			"resource_name", resourceName)
+
 		time.Sleep(sleepTime)
 	}
 }
