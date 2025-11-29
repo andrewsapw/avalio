@@ -3,3 +3,4 @@ config.toml
 .vscode
 .idea
 .DS_Store
+docs/book
