@@ -23,18 +23,18 @@ type TelegramResponse struct {
 }
 
 // Send implements Notificator.
-func (t TelegramNotificator) Send(checkResult status.CheckResult) {
-
+func (t TelegramNotificator) Send(checkResult status.CheckResult) error {
 	var message string
+
 	switch checkResult.State {
 	case status.StateNotAvailable:
 		message = fmt.Sprintf("❌ Ресурс `%s` недоступен.\n\n%s", checkResult.ResourceName, checkResult.ErorrsAsString())
 	case status.StateRecovered:
 		message = fmt.Sprintf("✅ Ресурс `%s` снова доступен.", checkResult.ResourceName)
 	case status.StateAvailable:
-		return
+		return nil
 	case status.StateStillNotAvailable:
-		return
+		return nil
 	default:
 		t.logger.Warn(
 			"Ошибка проверки состояния ресурса. Код состояния не поддерживается",
@@ -43,17 +43,17 @@ func (t TelegramNotificator) Send(checkResult status.CheckResult) {
 		)
 	}
 
-	t.sendMessage(message)
+	err := t.sendMessage(message)
+	return err
 }
 
 func (t TelegramNotificator) sendMessage(message string) error {
-	// Create the request URL
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", t.config.Token)
+
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	// Create the request body
 	requestBody, err := json.Marshal(map[string]any{
 		"chat_id":    t.config.ChatID,
 		"text":       message,
@@ -63,24 +63,18 @@ func (t TelegramNotificator) sendMessage(message string) error {
 		return fmt.Errorf("failed to marshal request body: %v", err)
 	}
 
-	// Send POST request
 	resp, err := client.Post(apiURL, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		t.logger.Error("HTTP request failed", "error", err.Error())
 		return fmt.Errorf("HTTP request failed: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Parse the response
 	var telegramResp TelegramResponse
 	if err := json.NewDecoder(resp.Body).Decode(&telegramResp); err != nil {
-		t.logger.Error("failed to decode response", "error", err.Error())
 		return fmt.Errorf("failed to decode response: %v", err)
 	}
 
-	// Check if the message was sent successfully
 	if !telegramResp.OK {
-		t.logger.Error("telegram API error", "error", err.Error())
 		return fmt.Errorf("telegram API error: %s", telegramResp.Description)
 	}
 

@@ -1,5 +1,7 @@
 package monitors
 
+import "log/slog"
+
 // [[monitors.cron]]
 // name = 'every minute'
 // resources = ['moninotr1']
@@ -19,4 +21,20 @@ type CronMonitorConfig struct {
 
 type MonitorsConfig struct {
 	Cron []CronMonitorConfig `toml:"cron"`
+}
+
+func BuildMonitors(config *MonitorsConfig, logger *slog.Logger) ([]Monitor, error) {
+	var buildedMonitors []Monitor
+	for _, cronMonitorConfig := range config.Cron {
+		cronMonitor, err := NewCronMonitor(cronMonitorConfig, logger)
+		if err != nil {
+			logger.Error("Error creating monitor", "error", err.Error())
+			return nil, err
+		}
+
+		logger.Info("Builded monitor", "monitor_name", cronMonitorConfig.Name)
+		buildedMonitors = append(buildedMonitors, cronMonitor)
+	}
+
+	return buildedMonitors, nil
 }

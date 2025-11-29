@@ -5,6 +5,6 @@ import (
 )
 
 type Notificator interface {
-	Send(status.CheckResult)
+	Send(status.CheckResult) error
 	GetName() string
 }
