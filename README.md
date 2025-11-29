@@ -44,9 +44,9 @@ url = 'https://google.com'
 expected_status = 200
 
 [[notificators.telegram]]
+name = 'bot'
 token = "..."
 chat_id = "..."
-name = 'telegram'
 
 [[monitors.cron]]
 name = 'everyday'

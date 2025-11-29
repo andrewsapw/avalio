@@ -13,6 +13,8 @@
 Проект собирается как обычный Go-проект:
 
 ```bash
+$ git clone https://github.com/andrewsapw/avalio.git
+$ cd avalio
 $ go build .
 ```
 
@@ -42,9 +44,9 @@ url = 'https://google.com'
 expected_status = 200
 
 [[notificators.telegram]]
+name = 'bot'
 token = "..."
 chat_id = "..."
-name = 'telegram'
 
 [[monitors.cron]]
 name = 'everyday'
