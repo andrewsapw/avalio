@@ -1,7 +1,6 @@
 name: release
 
 on:
-  pull_request:
   push:
     # run only against tags
     tags:
@@ -25,7 +24,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: stable
-      - name: Run GoReleaser
+      - name: Create release
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
