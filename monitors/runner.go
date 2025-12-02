@@ -60,26 +60,34 @@ func (m *MonitorRunner) Run() {
 
 func (m *MonitorRunner) Step() status.CheckResult {
 	resourceName := m.resource.GetName()
+	resourceType := m.resource.GetType()
 
 	ok, details := m.resource.RunCheck()
+
+	var state status.ResourceState
 	if !ok {
 		if !m.isLastMessageError {
 			m.isLastMessageError = true
-			checkResult := status.NewCheckResult(resourceName, details, status.StateNotAvailable)
-			return checkResult
+			state = status.StateNotAvailable
 		} else {
-			checkResult := status.NewCheckResult(resourceName, details, status.StateStillNotAvailable)
-			return checkResult
+			state = status.StateStillNotAvailable
 		}
 	} else {
 		m.logger.Debug("Resource is available", "resource_name", resourceName)
-		details := []status.CheckDetails{}
 
 		if m.isLastMessageError {
 			m.isLastMessageError = false
-			return status.NewCheckResult(resourceName, details, status.StateRecovered)
+			state = status.StateRecovered
 		} else {
-			return status.NewCheckResult(resourceName, details, status.StateAvailable)
+			state = status.StateAvailable
 		}
 	}
+
+	checkResult := status.NewCheckResult(
+		resourceName,
+		resourceType,
+		details,
+		state,
+	)
+	return checkResult
 }

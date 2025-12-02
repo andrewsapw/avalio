@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/andrewsapw/avalio/status"
@@ -28,7 +29,15 @@ func (t TelegramNotificator) Send(checkResult status.CheckResult) error {
 
 	switch checkResult.State {
 	case status.StateNotAvailable:
-		message = fmt.Sprintf("❌ Ресурс `%s` недоступен.\n\n%s", checkResult.ResourceName, checkResult.ErorrsAsString())
+		messageDetails := []string{
+			fmt.Sprintf("Тип проверки: `%s`", checkResult.ResourceType),
+			checkResult.ErrorsAsString(),
+		}
+		message = fmt.Sprintf(
+			"❌ Ресурс `%s` недоступен.\n\n%s",
+			checkResult.ResourceName,
+			strings.Join(messageDetails, "\n"),
+		)
 	case status.StateRecovered:
 		message = fmt.Sprintf("✅ Ресурс `%s` снова доступен.", checkResult.ResourceName)
 	case status.StateAvailable:

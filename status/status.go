@@ -36,11 +36,12 @@ func (s ResourceState) String() string {
 
 type CheckResult struct {
 	ResourceName string
+	ResourceType string
 	State        ResourceState
 	Details      []CheckDetails
 }
 
-func (c CheckResult) ErorrsAsString() string {
+func (c CheckResult) ErrorsAsString() string {
 	var b strings.Builder
 	for _, e := range c.Details {
 		b.WriteString(fmt.Sprintf("%s: %s\n", e.title, e.description))
@@ -52,9 +53,14 @@ func NewCheckError(title, description string) CheckDetails {
 	return CheckDetails{title: title, description: description}
 }
 
-func NewCheckResult(resourceName string, details []CheckDetails, state ResourceState) CheckResult {
+func NewCheckResult(
+	resourceName, resourceType string,
+	details []CheckDetails,
+	state ResourceState,
+) CheckResult {
 	return CheckResult{
 		ResourceName: resourceName,
+		ResourceType: resourceType,
 		Details:      details,
 		State:        state,
 	}
