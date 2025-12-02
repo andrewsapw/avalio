@@ -20,8 +20,10 @@ func (c ConsoleNotificator) GetName() string {
 func (c ConsoleNotificator) Send(checkResult status.CheckResult) error {
 	c.logger.Debug(
 		"Got check result for resource",
-		"resource", checkResult.ResourceName,
-		"details", checkResult.Details,
+		"state", checkResult.State,
+		"resource_name", checkResult.ResourceName,
+		"resource_type", checkResult.ResourceType,
+		"details", checkResult.ErrorsAsString(),
 	)
 	return nil
 }

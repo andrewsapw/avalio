@@ -1,6 +1,6 @@
 # HTTP-ресурс
 
-Проверка HTTP-ресурса осуществляется при помощи HTTP-прокола и запроса типа [HEAD](https://developer.mozilla.org/ru/docs/Web/HTTP/Reference/Methods/HEAD)
+Проверка HTTP-ресурса осуществляется при помощи HTTP-протокола и запроса типа [HEAD](https://developer.mozilla.org/ru/docs/Web/HTTP/Reference/Methods/HEAD)
 
 ## Конфигурация
 
