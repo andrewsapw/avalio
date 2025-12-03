@@ -1,6 +1,9 @@
 package resources
 
-import "log/slog"
+import (
+	"log/slog"
+	"sync"
+)
 
 // [[resources.http]]
 // name = 'example'
@@ -34,8 +37,9 @@ func BuildResources(config *ResourcesConfig, logger *slog.Logger) ([]Resource, e
 		buildedResources = append(buildedResources, httpResource)
 	}
 
+	pingMutex := sync.Mutex{}
 	for _, pingResourceConfig := range config.Ping {
-		pingResource := NewPingResource(pingResourceConfig, logger)
+		pingResource := NewPingResource(pingResourceConfig, &pingMutex, logger)
 		logger.Info("Builded resource", "resource_name", pingResource.GetName())
 		buildedResources = append(buildedResources, pingResource)
 	}

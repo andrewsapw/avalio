@@ -2,6 +2,7 @@ package resources
 
 import (
 	"log/slog"
+	"sync"
 
 	"context"
 	"fmt"
@@ -51,46 +52,45 @@ func Ping(ctx context.Context, host string, timeout time.Duration) PingResult {
 			Data: []byte("PING_TEST"),
 		},
 	}
-
 	// Marshal message
 	msgBytes, err := msg.Marshal(nil)
 	if err != nil {
-		return PingResult{Error: fmt.Errorf("marshal error: %w", err)}
+		return PingResult{Error: fmt.Errorf("ошибка сериализации сообщения: %w", err)}
 	}
 
 	// Send request
 	start := time.Now()
 	if _, err := conn.WriteTo(msgBytes, ip); err != nil {
-		return PingResult{Error: fmt.Errorf("write error: %w", err)}
+		return PingResult{Error: fmt.Errorf("ошибка отправки сообщения: %w", err)}
 	}
 
 	// Set deadline for reply
 	if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
-		return PingResult{Error: fmt.Errorf("deadline error: %w", err)}
+		return PingResult{Error: fmt.Errorf("ошибка установки времени ожидания: %w", err)}
 	}
 
 	// Read reply
 	reply := make([]byte, 1500)
 	n, peer, err := conn.ReadFrom(reply)
 	if err != nil {
-		return PingResult{Error: fmt.Errorf("read error: %w", err)}
+		return PingResult{Error: fmt.Errorf("ошибка чтения ответа: %w", err)}
 	}
 
 	// Parse reply
 	rtt := time.Since(start)
 	replyMsg, err := icmp.ParseMessage(ipv4.ICMPTypeEcho.Protocol(), reply[:n])
 	if err != nil {
-		return PingResult{Error: fmt.Errorf("parse error: %w", err)}
+		return PingResult{Error: fmt.Errorf("ошибка разбора ответа: %w", err)}
 	}
 
 	// Check if it's an echo reply
 	if replyMsg.Type != ipv4.ICMPTypeEchoReply {
-		return PingResult{Error: fmt.Errorf("unexpected ICMP type: %v", replyMsg.Type)}
+		return PingResult{Error: fmt.Errorf("неожиданный тип ICMP: %v", replyMsg.Type)}
 	}
 
 	// Verify the peer address matches
 	if peer.String() != ip.String() {
-		return PingResult{Error: fmt.Errorf("response from different host: %s", peer)}
+		return PingResult{Error: fmt.Errorf("ответ от другого хоста: %s", peer)}
 	}
 
 	return PingResult{
@@ -107,6 +107,7 @@ func isReachable(host string, timeout time.Duration) (bool, error) {
 
 type PingResource struct {
 	config PingResourceConfig
+	mu     *sync.Mutex
 	logger *slog.Logger
 }
 
@@ -120,10 +121,14 @@ func (P PingResource) GetType() string {
 }
 
 func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
+	P.mu.Lock()
+	defer P.mu.Unlock()
+
 	if _, err := isReachable(P.config.Address, time.Duration(uint(time.Second)*P.config.TimeoutSeconds)); err != nil {
-		var checkErrors [2]status.CheckDetails
+		var checkErrors [3]status.CheckDetails
 		checkErrors[0] = status.NewCheckError("Причина", "Ресурс по адресу недоступен")
 		checkErrors[1] = status.NewCheckError("Адрес", P.config.Address)
+		checkErrors[2] = status.NewCheckError("Исходная ошибка", err.Error())
 		return false, checkErrors[:]
 	} else {
 		return true, nil
@@ -131,9 +136,9 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 
 }
 
-func NewPingResource(config PingResourceConfig, logger *slog.Logger) PingResource {
+func NewPingResource(config PingResourceConfig, mu *sync.Mutex, logger *slog.Logger) PingResource {
 	if config.TimeoutSeconds == 0 {
 		config.TimeoutSeconds = 10
 	}
-	return PingResource{config: config, logger: logger}
+	return PingResource{config: config, mu: mu, logger: logger}
 }

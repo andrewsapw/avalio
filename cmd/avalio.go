@@ -54,9 +54,15 @@ func StartAvalio() {
 
 	monitors, err := monitors.BuildMonitors(&config.Monitors, logger)
 	if err != nil {
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
 	application := app.NewApplication(resources, notificators, monitors, logger)
-	application.Run()
+
+	err = application.Run()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 }
