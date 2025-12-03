@@ -1,0 +1,13 @@
+services:
+  avalio:
+    container_name: avalio
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+
+    cap_add:
+      - NET_RAW
