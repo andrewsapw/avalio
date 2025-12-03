@@ -32,5 +32,4 @@ config.toml
 .idea
 .DS_Store
 docs/book
-# Added by goreleaser init:
 dist/
