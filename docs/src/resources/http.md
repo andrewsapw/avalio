@@ -11,7 +11,8 @@
 name = 'example'
 url = 'https://example.com'
 expected_status = 200
-max_retries = 3  # Optional, defaults to 3 if not specified
+max_retries = 3      # Optional, defaults to 3 if not specified
+retry_delay = 2      # Optional, retry delay in seconds (defaults to 1)
 ```
 
 Конфигурация состоит из следующих настроек:
@@ -20,3 +21,4 @@ max_retries = 3  # Optional, defaults to 3 if not specified
 - `url` - адрес ресурса, который нужно проверять
 - `expected_status` - ожидаемый статус ответа. Если по результату проверки ответ ресурса не совпадет с этой настройкой - это будет эквивалетно тому что ресурс недоступен
 - `max_retries` - максимальное количество попыток повторной проверки ресурса при неудаче. Если не указано, по умолчанию будет использовано 3 попытки
+- `retry_delay` - интервал между повторными попытками проверки ресурса в секундах. Если не указано, по умолчанию будет использована задержка в 1 секунду

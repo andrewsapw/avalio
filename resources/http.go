@@ -29,7 +29,13 @@ func (H HTTPResource) RunCheck() (bool, []status.CheckDetails) {
 	if maxRetries <= 0 {
 		maxRetries = 3
 	}
-	const retryDelay = time.Second
+
+	// Use configured retry delay, default to 1 second if not set
+	retryDelay := time.Duration(H.config.RetryDelay) * time.Second
+	if retryDelay <= 0 {
+		retryDelay = time.Second
+	}
+
 	for i := 0; i < maxRetries; i++ {
 		if success, details := H.performCheck(); success {
 			return success, details
