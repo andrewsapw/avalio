@@ -125,6 +125,7 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 	defer P.mu.Unlock()
 
 	const numAttempts = 3
+	const sleepDuration = time.Second * 1
 	for i := 0; i < numAttempts; i++ {
 		if _, err := isReachable(P.config.Address, time.Duration(uint(time.Second)*P.config.TimeoutSeconds)); err != nil {
 			var checkErrors [3]status.CheckDetails
@@ -135,6 +136,7 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 			if i == (numAttempts - 1) {
 				return false, checkErrors[:]
 			} else {
+				time.Sleep(sleepDuration)
 				continue
 			}
 		} else {
