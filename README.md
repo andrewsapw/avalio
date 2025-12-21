@@ -37,6 +37,7 @@ log_level = "debug"
 name = 'example'
 url = 'https://example.com'
 expected_status = 200
+max_retries = 5  # Optional: configure number of retry attempts
 
 [[resources.http]]
 name = 'google'
@@ -68,6 +69,8 @@ log_level = "debug"
 name = 'example'
 url = 'https://example.com'
 expected_status = 200
+max_retries = 5  # Optional: configure number of retry attempts
+```
 
 [[resources.http]]
 name = 'google'
@@ -76,6 +79,8 @@ expected_status = 200
 ```
 
 Эти ресурсы описывают _что будет проверятся_. В нашем случае, мы будем проверять доступность двух ресурсов: `https://example.com` и `https://google.com`.
+
+Для каждого HTTP-ресурса можно настроить параметр `max_retries`, который определяет количество попыток повторной проверки ресурса при первоначальной неудаче. Если параметр не указан, используется значение по умолчанию - 3 попытки.
 
 После ресурсов, описываем нотификаторы, то есть каналы, по которым будут приходить уведомления. В нашем файле конфигурации задается лишь один канал, Telegram:
 

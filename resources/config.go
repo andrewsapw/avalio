@@ -12,6 +12,7 @@ type HttpResourceConfig struct {
 	Url            string `toml:"url"`
 	Name           string `toml:"name"`
 	ExpectedStatus int    `toml:"expected_status"`
+	MaxRetries     int    `toml:"max_retries"`
 }
 
 // [[resources.ping]]
