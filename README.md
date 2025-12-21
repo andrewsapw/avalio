@@ -71,7 +71,6 @@ name = 'example'
 url = 'https://example.com'
 expected_status = 200
 max_retries = 5  # Optional: configure number of retry attempts
-```
 
 [[resources.http]]
 name = 'google'
