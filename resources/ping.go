@@ -124,14 +124,22 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 	P.mu.Lock()
 	defer P.mu.Unlock()
 
-	if _, err := isReachable(P.config.Address, time.Duration(uint(time.Second)*P.config.TimeoutSeconds)); err != nil {
-		var checkErrors [3]status.CheckDetails
-		checkErrors[0] = status.NewCheckError("Причина", "Ресурс по адресу недоступен")
-		checkErrors[1] = status.NewCheckError("Адрес", P.config.Address)
-		checkErrors[2] = status.NewCheckError("Исходная ошибка", err.Error())
-		return false, checkErrors[:]
-	} else {
-		return true, nil
+	const numAttempts = 3
+	for i := 0; i < numAttempts; i++ {
+		if _, err := isReachable(P.config.Address, time.Duration(uint(time.Second)*P.config.TimeoutSeconds)); err != nil {
+			var checkErrors [3]status.CheckDetails
+			checkErrors[0] = status.NewCheckError("Причина", "Ресурс по адресу недоступен")
+			checkErrors[1] = status.NewCheckError("Адрес", P.config.Address)
+			checkErrors[2] = status.NewCheckError("Исходная ошибка", err.Error())
+
+			if i == (numAttempts - 1) {
+				return false, checkErrors[:]
+			} else {
+				continue
+			}
+		} else {
+			return true, nil
+		}
 	}
 
 }
