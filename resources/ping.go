@@ -126,8 +126,8 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 
 	const numAttempts = 3
 	const sleepDuration = time.Second * 1
-	for i := 0; i < numAttempts; i++ {
-		if _, err := isReachable(P.config.Address, time.Duration(uint(time.Second)*P.config.TimeoutSeconds)); err != nil {
+	for i := range numAttempts {
+		if _, err := isReachable(P.config.Address, time.Duration(P.config.TimeoutSeconds*int(time.Second))); err != nil {
 			var checkErrors [3]status.CheckDetails
 			checkErrors[0] = status.NewCheckError("Причина", "Ресурс по адресу недоступен")
 			checkErrors[1] = status.NewCheckError("Адрес", P.config.Address)
