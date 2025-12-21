@@ -141,7 +141,7 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 			return true, nil
 		}
 	}
-
+	return true, nil
 }
 
 func NewPingResource(config PingResourceConfig, mu *sync.Mutex, logger *slog.Logger) PingResource {
