@@ -19,7 +19,7 @@ func (m MockedResource) GetName() string {
 
 // GetType implements resources.Resource.
 func (m MockedResource) GetType() string {
-	panic("unimplemented")
+	return "mock"
 }
 
 // RunCheck implements resources.Resource.

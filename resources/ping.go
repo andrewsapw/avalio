@@ -1,11 +1,9 @@
 package resources
 
 import (
-	"log/slog"
-	"sync"
-
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"time"
@@ -14,6 +12,7 @@ import (
 	"golang.org/x/net/icmp"
 
 	"golang.org/x/net/ipv4"
+	"golang.org/x/net/ipv6"
 )
 
 // PingResult represents the outcome of a ping attempt
@@ -25,26 +24,42 @@ type PingResult struct {
 
 // Ping sends an ICMP echo request and waits for a reply
 func Ping(ctx context.Context, host string, timeout time.Duration) PingResult {
-	// Resolve host to IP address
-	ip, err := net.ResolveIPAddr("ip", host)
+	// Resolve host to IP address, prefer IPv4 then IPv6
+	ip, err := net.ResolveIPAddr("ip4", host)
 	if err != nil {
-		return PingResult{Error: fmt.Errorf("resolve error: %w", err)}
+		ip, err = net.ResolveIPAddr("ip6", host)
+		if err != nil {
+			return PingResult{Error: fmt.Errorf("resolve error: %w", err)}
+		}
 	}
 
 	// Create ICMP listener
-	conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
+	var network, addr string
+	var echoType, echoReplyType icmp.Type
+	var proto int
+	if ip.IP.To4() != nil {
+		network = "ip4:icmp"
+		addr = "0.0.0.0"
+		echoType = ipv4.ICMPTypeEcho
+		echoReplyType = ipv4.ICMPTypeEchoReply
+		proto = ipv4.ICMPTypeEcho.Protocol()
+	} else {
+		network = "ip6:ipv6-icmp"
+		addr = "::"
+		echoType = ipv6.ICMPTypeEchoRequest
+		echoReplyType = ipv6.ICMPTypeEchoReply
+		proto = ipv6.ICMPTypeEchoRequest.Protocol()
+	}
+
+	conn, err := icmp.ListenPacket(network, addr)
 	if err != nil {
-		// Fallback to IPv6 if IPv4 fails
-		conn, err = icmp.ListenPacket("ip6:ipv6-icmp", "::")
-		if err != nil {
-			return PingResult{Error: fmt.Errorf("listen error: %w", err)}
-		}
+		return PingResult{Error: fmt.Errorf("listen error: %w", err)}
 	}
 	defer conn.Close()
 
 	// Create ICMP echo request
 	msg := icmp.Message{
-		Type: ipv4.ICMPTypeEcho,
+		Type: echoType,
 		Code: 0,
 		Body: &icmp.Echo{
 			ID:   os.Getpid() & 0xffff,
@@ -71,31 +86,40 @@ func Ping(ctx context.Context, host string, timeout time.Duration) PingResult {
 
 	// Read reply
 	reply := make([]byte, 1500)
-	n, peer, err := conn.ReadFrom(reply)
-	if err != nil {
-		return PingResult{Error: fmt.Errorf("ошибка чтения ответа: %w", err)}
-	}
+	for {
+		n, peer, err := conn.ReadFrom(reply)
+		if err != nil {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				return PingResult{Error: fmt.Errorf("таймаут ожидания ответа: %w", err)}
+			}
+			return PingResult{Error: fmt.Errorf("ошибка чтения ответа: %w", err)}
+		}
 
-	// Parse reply
-	rtt := time.Since(start)
-	replyMsg, err := icmp.ParseMessage(ipv4.ICMPTypeEcho.Protocol(), reply[:n])
-	if err != nil {
-		return PingResult{Error: fmt.Errorf("ошибка разбора ответа: %w", err)}
-	}
+		replyMsg, err := icmp.ParseMessage(proto, reply[:n])
+		if err != nil {
+			// Ignore unrelated ICMP packets until deadline
+			continue
+		}
 
-	// Check if it's an echo reply
-	if replyMsg.Type != ipv4.ICMPTypeEchoReply {
-		return PingResult{Error: fmt.Errorf("неожиданный тип ICMP: %v", replyMsg.Type)}
-	}
+		if replyMsg.Type != echoReplyType {
+			continue
+		}
 
-	// Verify the peer address matches
-	if peer.String() != ip.String() {
-		return PingResult{Error: fmt.Errorf("ответ от другого хоста: %s", peer)}
-	}
+		echo, ok := replyMsg.Body.(*icmp.Echo)
+		if !ok || echo.ID != (os.Getpid()&0xffff) || echo.Seq != 1 {
+			continue
+		}
 
-	return PingResult{
-		Reachable: true,
-		RTT:       rtt,
+		if peerAddr, ok := peer.(*net.IPAddr); ok {
+			if !peerAddr.IP.Equal(ip.IP) {
+				continue
+			}
+		}
+
+		return PingResult{
+			Reachable: true,
+			RTT:       time.Since(start),
+		}
 	}
 }
 
@@ -107,7 +131,6 @@ func isReachable(host string, timeout time.Duration) (bool, error) {
 
 type PingResource struct {
 	config PingResourceConfig
-	mu     *sync.Mutex
 	logger *slog.Logger
 }
 
@@ -121,9 +144,6 @@ func (P PingResource) GetType() string {
 }
 
 func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
-	P.mu.Lock()
-	defer P.mu.Unlock()
-
 	const numAttempts = 3
 	const sleepDuration = time.Second * 1
 	for i := range numAttempts {
@@ -146,9 +166,9 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 	return true, nil
 }
 
-func NewPingResource(config PingResourceConfig, mu *sync.Mutex, logger *slog.Logger) PingResource {
+func NewPingResource(config PingResourceConfig, logger *slog.Logger) PingResource {
 	if config.TimeoutSeconds == 0 {
 		config.TimeoutSeconds = 10
 	}
-	return PingResource{config: config, mu: mu, logger: logger}
+	return PingResource{config: config, logger: logger}
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
-	"sync"
 )
 
 // Error variables for HTTP resource validation
@@ -172,13 +171,12 @@ func BuildResources(config *ResourcesConfig, logger *slog.Logger) ([]Resource, e
 		buildedResources = append(buildedResources, httpResource)
 	}
 
-	pingMutex := sync.Mutex{}
 	for _, pingResourceConfig := range config.Ping {
 		if err := pingResourceConfig.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid ping resource configuration: %w", err)
 		}
 
-		pingResource := NewPingResource(pingResourceConfig, &pingMutex, logger)
+		pingResource := NewPingResource(pingResourceConfig, logger)
 		logger.Info("Builded resource", "resource_name", pingResource.GetName())
 		buildedResources = append(buildedResources, pingResource)
 	}
