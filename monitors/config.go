@@ -23,16 +23,16 @@ type MonitorsConfig struct {
 	Cron []CronMonitorConfig `toml:"cron"`
 }
 
-func BuildMonitors(config *MonitorsConfig, logger *slog.Logger) ([]Monitor, error) {
+func BuildMonitors(config *MonitorsConfig) ([]Monitor, error) {
 	var buildedMonitors []Monitor
 	for _, cronMonitorConfig := range config.Cron {
-		cronMonitor, err := NewCronMonitor(cronMonitorConfig, logger)
+		cronMonitor, err := NewCronMonitor(cronMonitorConfig)
 		if err != nil {
-			logger.Error("Error creating monitor", "error", err.Error())
+			slog.Error("Error creating monitor", "error", err.Error())
 			return nil, err
 		}
 
-		logger.Info("Builded monitor", "monitor_name", cronMonitorConfig.Name)
+		slog.Info("Builded monitor", "monitor_name", cronMonitorConfig.Name)
 		buildedMonitors = append(buildedMonitors, cronMonitor)
 	}
 

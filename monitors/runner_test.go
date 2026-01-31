@@ -2,7 +2,6 @@ package monitors
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 
 	"github.com/andrewsapw/avalio/status"
@@ -52,15 +51,13 @@ func TestMonitorStates(t *testing.T) {
 
 	toFail := false
 	resource := MockedResource{toFail: &toFail}
-	logger := slog.Default()
-	monitor, _ := NewCronMonitor(cronConfig, logger)
+	monitor, _ := NewCronMonitor(cronConfig)
 
 	runner := NewMonitorRunner(
 		monitor,
 		resource,
 		channels[:],
 		context.Background(),
-		logger,
 	)
 
 	checkAndVerifyState(t, runner, status.StateAvailable)

@@ -1,7 +1,6 @@
 package monitors
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -9,7 +8,6 @@ import (
 
 type CronMonitor struct {
 	config   CronMonitorConfig
-	logger   *slog.Logger
 	schedule cron.Schedule
 }
 
@@ -33,12 +31,12 @@ func (c CronMonitor) Next() time.Time {
 	return c.schedule.Next(now)
 }
 
-func NewCronMonitor(config CronMonitorConfig, logger *slog.Logger) (*CronMonitor, error) {
+func NewCronMonitor(config CronMonitorConfig) (*CronMonitor, error) {
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	schedule, err := parser.Parse(config.Cron)
 	if err != nil {
 		return nil, err
 	}
-	return &CronMonitor{config: config, logger: logger, schedule: schedule}, nil
+	return &CronMonitor{config: config, schedule: schedule}, nil
 
 }

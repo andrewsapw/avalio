@@ -14,7 +14,6 @@ import (
 
 type TelegramNotificator struct {
 	config TelegramNotificatorConfig
-	logger *slog.Logger
 }
 
 // TelegramResponse represents the structure of Telegram API response
@@ -45,7 +44,7 @@ func (t TelegramNotificator) Send(checkResult status.CheckResult) error {
 	case status.StateStillNotAvailable:
 		return nil
 	default:
-		t.logger.Warn(
+		slog.Warn(
 			"Ошибка проверки состояния ресурса. Код состояния не поддерживается",
 			"resource_name", checkResult.ResourceName,
 			"state", checkResult.State,
@@ -95,6 +94,6 @@ func (t TelegramNotificator) GetName() string {
 	return t.config.Name
 }
 
-func NewTelegramNotificator(config TelegramNotificatorConfig, logger *slog.Logger) TelegramNotificator {
-	return TelegramNotificator{config: config, logger: logger}
+func NewTelegramNotificator(config TelegramNotificatorConfig) TelegramNotificator {
+	return TelegramNotificator{config: config}
 }

@@ -75,7 +75,6 @@ func isReachable(host string, timeout time.Duration) (bool, error) {
 
 type PingResource struct {
 	config PingResourceConfig
-	logger *slog.Logger
 }
 
 // GetName implements Resource.
@@ -110,9 +109,9 @@ func (P PingResource) RunCheck() (bool, []status.CheckDetails) {
 	return true, nil
 }
 
-func NewPingResource(config PingResourceConfig, logger *slog.Logger) PingResource {
+func NewPingResource(config PingResourceConfig) PingResource {
 	if config.TimeoutSeconds == 0 {
 		config.TimeoutSeconds = 10
 	}
-	return PingResource{config: config, logger: logger}
+	return PingResource{config: config}
 }

@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +11,7 @@ func TestHTTPResource_GetName(t *testing.T) {
 		Name: "test-resource",
 		Url:  "http://example.com",
 	}
-	resource := NewHTTPResource(config, slog.Default())
+	resource := NewHTTPResource(config)
 	if resource.GetName() != "test-resource" {
 		t.Errorf("Expected GetName() to return 'test-resource', got '%s'", resource.GetName())
 	}
@@ -23,7 +22,7 @@ func TestHTTPResource_GetType(t *testing.T) {
 		Name: "test-resource",
 		Url:  "http://example.com",
 	}
-	resource := NewHTTPResource(config, slog.Default())
+	resource := NewHTTPResource(config)
 	if resource.GetType() != "http" {
 		t.Errorf("Expected GetType() to return 'http', got '%s'", resource.GetType())
 	}
@@ -40,7 +39,7 @@ func TestHTTPResource_RunCheck_Success(t *testing.T) {
 		Url:            server.URL,
 		ExpectedStatus: http.StatusOK,
 	}
-	resource := NewHTTPResource(config, slog.Default())
+	resource := NewHTTPResource(config)
 
 	success, details := resource.RunCheck()
 	if !success {
@@ -58,7 +57,7 @@ func TestHTTPResource_RunCheck_ConnectionError(t *testing.T) {
 		ExpectedStatus: http.StatusOK,
 		MaxRetries:     1,
 	}
-	resource := NewHTTPResource(config, slog.Default())
+	resource := NewHTTPResource(config)
 
 	success, details := resource.RunCheck()
 	if success {
@@ -81,7 +80,7 @@ func TestHTTPResource_RunCheck_UnexpectedStatus(t *testing.T) {
 		ExpectedStatus: http.StatusOK,
 		MaxRetries:     1,
 	}
-	resource := NewHTTPResource(config, slog.Default())
+	resource := NewHTTPResource(config)
 
 	success, details := resource.RunCheck()
 	if success {

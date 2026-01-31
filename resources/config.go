@@ -158,7 +158,7 @@ type ResourcesConfig struct {
 	Ping []PingResourceConfig `toml:"ping"`
 }
 
-func BuildResources(config *ResourcesConfig, logger *slog.Logger) ([]Resource, error) {
+func BuildResources(config *ResourcesConfig) ([]Resource, error) {
 	var buildedResources []Resource
 
 	for _, httpResourceConfig := range config.Http {
@@ -166,8 +166,8 @@ func BuildResources(config *ResourcesConfig, logger *slog.Logger) ([]Resource, e
 			return nil, fmt.Errorf("invalid http resource configuration: %w", err)
 		}
 
-		httpResource := NewHTTPResource(httpResourceConfig, logger)
-		logger.Info("Builded resource", "resource_name", httpResource.GetName())
+		httpResource := NewHTTPResource(httpResourceConfig)
+		slog.Info("Builded resource", "resource_name", httpResource.GetName())
 		buildedResources = append(buildedResources, httpResource)
 	}
 
@@ -176,8 +176,8 @@ func BuildResources(config *ResourcesConfig, logger *slog.Logger) ([]Resource, e
 			return nil, fmt.Errorf("invalid ping resource configuration: %w", err)
 		}
 
-		pingResource := NewPingResource(pingResourceConfig, logger)
-		logger.Info("Builded resource", "resource_name", pingResource.GetName())
+		pingResource := NewPingResource(pingResourceConfig)
+		slog.Info("Builded resource", "resource_name", pingResource.GetName())
 		buildedResources = append(buildedResources, pingResource)
 	}
 

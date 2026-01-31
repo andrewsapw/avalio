@@ -40,31 +40,31 @@ func StartAvalio() {
 
 	slog.SetDefault(logger)
 
-	logger.Info("Loading configuration file", "config_path", *configPath)
+	slog.Info("Loading configuration file", "config_path", *configPath)
 
-	resources, err := resources.BuildResources(&config.Resources, logger)
+	resources, err := resources.BuildResources(&config.Resources)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	notificators, err := notificators.BuildNotificators(&config.Notificators, logger)
+	notificators, err := notificators.BuildNotificators(&config.Notificators)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	monitors, err := monitors.BuildMonitors(&config.Monitors, logger)
+	monitors, err := monitors.BuildMonitors(&config.Monitors)
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	application := app.NewApplication(resources, notificators, monitors, logger)
+	application := app.NewApplication(resources, notificators, monitors)
 
 	err = application.Run()
 	if err != nil {
-		logger.Error(err.Error())
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }

@@ -17,20 +17,17 @@ type Application struct {
 	Resources    []resources.Resource
 	Notificators []notificators.Notificator
 	Monitors     []monitors.Monitor
-	Logger       *slog.Logger
 }
 
 func NewApplication(
 	resources []resources.Resource,
 	notificators []notificators.Notificator,
 	monitors []monitors.Monitor,
-	logger *slog.Logger,
 ) *Application {
 	return &Application{
 		Resources:    resources,
 		Notificators: notificators,
 		Monitors:     monitors,
-		Logger:       logger,
 	}
 }
 
@@ -58,7 +55,7 @@ func (app *Application) Run() error {
 
 		wg.Add(1)
 		go func() {
-			go app.listenNotificator(notificator, channel, ctx, app.Logger)
+			go app.listenNotificator(notificator, channel, ctx)
 			wg.Done()
 		}()
 	}
@@ -94,7 +91,6 @@ func (app *Application) Run() error {
 				r,
 				monitorChannels,
 				ctx,
-				app.Logger,
 			)
 
 			wg.Add(1)
@@ -106,7 +102,7 @@ func (app *Application) Run() error {
 
 	}
 
-	app.Logger.Info("Application started")
+	slog.Info("Application started")
 
 	wg.Wait()
 	return nil
@@ -116,17 +112,16 @@ func (app Application) listenNotificator(
 	notificator notificators.Notificator,
 	channel <-chan status.CheckResult,
 	ctx context.Context,
-	logger *slog.Logger,
 ) {
 	notificatorName := notificator.GetName()
-	logger.Info("Starting notificator", "notificator_name", notificator.GetName())
+	slog.Info("Starting notificator", "notificator_name", notificator.GetName())
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case checkResult := <-channel:
 			if err := notificator.Send(checkResult); err != nil {
-				logger.Error(
+				slog.Error(
 					"Error sending notification",
 					"notificator_name", notificatorName,
 					"error", err,

@@ -14,7 +14,6 @@ type MonitorRunner struct {
 	resource           resources.Resource
 	isLastMessageError bool
 	channels           []chan status.CheckResult
-	logger             *slog.Logger
 	ctx                context.Context
 }
 
@@ -23,18 +22,17 @@ func NewMonitorRunner(
 	resource resources.Resource,
 	channels []chan status.CheckResult,
 	ctx context.Context,
-	logger *slog.Logger,
 ) *MonitorRunner {
-	return &MonitorRunner{monitor: monitor, channels: channels, resource: resource, ctx: ctx, logger: logger, isLastMessageError: false}
+	return &MonitorRunner{monitor: monitor, channels: channels, resource: resource, ctx: ctx, isLastMessageError: false}
 }
 
 func (m *MonitorRunner) Run() {
 	resourceName := m.resource.GetName()
-	m.logger.Info("Starting resource monitor", "monitor_name", m.monitor.GetName(),
+	slog.Info("Starting resource monitor", "monitor_name", m.monitor.GetName(),
 		"resource_name", resourceName)
 
 	for {
-		m.logger.Debug("Checking resource", slog.String("resourceName", resourceName))
+		slog.Debug("Checking resource", slog.String("resourceName", resourceName))
 		checkResult := m.Step()
 
 		err := m.ctx.Err()
@@ -49,7 +47,7 @@ func (m *MonitorRunner) Run() {
 
 		nextStepAt := m.monitor.Next()
 		sleepTime := time.Until(nextStepAt)
-		m.logger.Debug("Check result sent to notificators",
+		slog.Debug("Check result sent to notificators",
 			"state", checkResult.State,
 			"next_run", nextStepAt,
 			"resource_name", resourceName)
@@ -73,7 +71,7 @@ func (m *MonitorRunner) Step() status.CheckResult {
 			state = status.StateStillNotAvailable
 		}
 	} else {
-		m.logger.Debug("Resource is available", "resource_name", resourceName)
+		slog.Debug("Resource is available", "resource_name", resourceName)
 
 		if m.isLastMessageError {
 			m.isLastMessageError = false
