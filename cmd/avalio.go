@@ -38,6 +38,8 @@ func StartAvalio() {
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})
 	logger := slog.New(handler)
 
+	slog.SetDefault(logger)
+
 	logger.Info("Loading configuration file", "config_path", *configPath)
 
 	resources, err := resources.BuildResources(&config.Resources, logger)

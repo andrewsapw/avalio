@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net"
-	"os"
+	"math"
+	"os/exec"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/andrewsapw/avalio/status"
-	"golang.org/x/net/icmp"
-
-	"golang.org/x/net/ipv4"
-	"golang.org/x/net/ipv6"
 )
 
 // PingResult represents the outcome of a ping attempt
@@ -24,102 +24,46 @@ type PingResult struct {
 
 // Ping sends an ICMP echo request and waits for a reply
 func Ping(ctx context.Context, host string, timeout time.Duration) PingResult {
-	// Resolve host to IP address, prefer IPv4 then IPv6
-	ip, err := net.ResolveIPAddr("ip4", host)
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	}
+
+	args := []string{"-c", "1", "-n"}
+	if timeout > 0 {
+		if runtime.GOOS == "darwin" {
+			waitMs := int(math.Ceil(timeout.Seconds() * 1000))
+			args = append(args, "-W", strconv.Itoa(waitMs))
+		} else {
+			waitSec := int(math.Ceil(timeout.Seconds()))
+			args = append(args, "-W", strconv.Itoa(waitSec))
+		}
+	}
+	args = append(args, host)
+
+	slog.Debug("exec ping", "cmd", "ping", "args", args)
+	cmd := exec.CommandContext(ctx, "ping", args...)
+	out, err := cmd.CombinedOutput()
+	output := strings.TrimSpace(string(out))
 	if err != nil {
-		ip, err = net.ResolveIPAddr("ip6", host)
-		if err != nil {
-			return PingResult{Error: fmt.Errorf("resolve error: %w", err)}
+		if ctx.Err() != nil {
+			return PingResult{Error: fmt.Errorf("таймаут ожидания ответа: %w", ctx.Err())}
+		}
+		return PingResult{Error: fmt.Errorf("ping не прошел: %w: %s", err, output)}
+	}
+
+	rtt := time.Duration(0)
+	re := regexp.MustCompile(`time=([0-9.]+)\s*ms`)
+	if match := re.FindStringSubmatch(output); len(match) == 2 {
+		if ms, parseErr := strconv.ParseFloat(match[1], 64); parseErr == nil {
+			rtt = time.Duration(ms * float64(time.Millisecond))
 		}
 	}
 
-	// Create ICMP listener
-	var network, addr string
-	var echoType, echoReplyType icmp.Type
-	var proto int
-	if ip.IP.To4() != nil {
-		network = "ip4:icmp"
-		addr = "0.0.0.0"
-		echoType = ipv4.ICMPTypeEcho
-		echoReplyType = ipv4.ICMPTypeEchoReply
-		proto = ipv4.ICMPTypeEcho.Protocol()
-	} else {
-		network = "ip6:ipv6-icmp"
-		addr = "::"
-		echoType = ipv6.ICMPTypeEchoRequest
-		echoReplyType = ipv6.ICMPTypeEchoReply
-		proto = ipv6.ICMPTypeEchoRequest.Protocol()
-	}
-
-	conn, err := icmp.ListenPacket(network, addr)
-	if err != nil {
-		return PingResult{Error: fmt.Errorf("listen error: %w", err)}
-	}
-	defer conn.Close()
-
-	// Create ICMP echo request
-	msg := icmp.Message{
-		Type: echoType,
-		Code: 0,
-		Body: &icmp.Echo{
-			ID:   os.Getpid() & 0xffff,
-			Seq:  1,
-			Data: []byte("PING_TEST"),
-		},
-	}
-	// Marshal message
-	msgBytes, err := msg.Marshal(nil)
-	if err != nil {
-		return PingResult{Error: fmt.Errorf("ошибка сериализации сообщения: %w", err)}
-	}
-
-	// Send request
-	start := time.Now()
-	if _, err := conn.WriteTo(msgBytes, ip); err != nil {
-		return PingResult{Error: fmt.Errorf("ошибка отправки сообщения: %w", err)}
-	}
-
-	// Set deadline for reply
-	if err := conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
-		return PingResult{Error: fmt.Errorf("ошибка установки времени ожидания: %w", err)}
-	}
-
-	// Read reply
-	reply := make([]byte, 1500)
-	for {
-		n, peer, err := conn.ReadFrom(reply)
-		if err != nil {
-			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				return PingResult{Error: fmt.Errorf("таймаут ожидания ответа: %w", err)}
-			}
-			return PingResult{Error: fmt.Errorf("ошибка чтения ответа: %w", err)}
-		}
-
-		replyMsg, err := icmp.ParseMessage(proto, reply[:n])
-		if err != nil {
-			// Ignore unrelated ICMP packets until deadline
-			continue
-		}
-
-		if replyMsg.Type != echoReplyType {
-			continue
-		}
-
-		echo, ok := replyMsg.Body.(*icmp.Echo)
-		if !ok || echo.ID != (os.Getpid()&0xffff) || echo.Seq != 1 {
-			continue
-		}
-
-		if peerAddr, ok := peer.(*net.IPAddr); ok {
-			if !peerAddr.IP.Equal(ip.IP) {
-				continue
-			}
-		}
-
-		return PingResult{
-			Reachable: true,
-			RTT:       time.Since(start),
-		}
+	return PingResult{
+		Reachable: true,
+		RTT:       rtt,
 	}
 }
 
